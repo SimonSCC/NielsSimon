@@ -19,7 +19,7 @@ class GameClient:
     async def connect_to_server(self, server_ip, player_name):
         """Connect to the game server"""
         try:
-            self.websocket = await websockets.connect(f"ws://{server_ip}:8765")
+            self.websocket = await websockets.connect(f"ws://{server_ip}:8766")
             self.connected = True
             self.player_name = player_name
             

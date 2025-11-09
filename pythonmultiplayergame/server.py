@@ -113,7 +113,7 @@ class GameServer:
             await self.broadcast_to_all(action_message)
             print(f"🎮 {player_name} performed action: {message_data['action']}")
     
-    async def handle_player_connection(self, websocket, path):
+    async def handle_player_connection(self, websocket):
         """Handle new player connections"""
         try:
             # Wait for player to send their name
@@ -129,10 +129,13 @@ class GameServer:
                         message_data = json.loads(message)
                         await self.handle_player_message(websocket, message_data)
                     except json.JSONDecodeError:
-                        print(f"Invalid message from {self.players[websocket]['name']}")
+                        if websocket in self.players:
+                            print(f"Invalid message from {self.players[websocket]['name']}")
             
         except websockets.exceptions.ConnectionClosed:
             pass
+        except json.JSONDecodeError:
+            print("Invalid join message received")
         finally:
             await self.unregister_player(websocket)
 
@@ -147,15 +150,21 @@ async def start_server():
     
     print("🎮 MULTIPLAYER GAME SERVER STARTING...")
     print(f"🌐 Server IP: {local_ip}")
-    print(f"📡 Port: 8765")
-    print(f"📋 Tell your friend to connect to: ws://{local_ip}:8765")
+    print(f"📡 Port: 8766")
+    print(f"📋 Tell your friend to connect to: ws://{local_ip}:8766")
     print("=" * 50)
     
-    # Start the WebSocket server
-    async with websockets.serve(game_server.handle_player_connection, "0.0.0.0", 8765):
-        print("✅ Server is running! Waiting for players...")
-        print("Press Ctrl+C to stop the server")
-        await asyncio.Future()  # Run forever
+    # Start the WebSocket server directly with the bound method
+    server = await websockets.serve(
+        game_server.handle_player_connection,
+        "0.0.0.0", 
+        8766
+    )
+    
+    print("✅ Server is running! Waiting for players...")
+    print("Press Ctrl+C to stop the server")
+    
+    await server.wait_closed()
 
 if __name__ == "__main__":
     try:
