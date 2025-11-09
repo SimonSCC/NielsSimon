@@ -113,7 +113,7 @@ class GameServer:
             await self.broadcast_to_all(action_message)
             print(f"🎮 {player_name} performed action: {message_data['action']}")
     
-    async def handle_player_connection(self, websocket):
+    async def handle_player_connection(self, websocket, path):
         """Handle new player connections"""
         try:
             # Wait for player to send their name
@@ -150,15 +150,19 @@ async def start_server():
     
     print("🎮 MULTIPLAYER GAME SERVER STARTING...")
     print(f"🌐 Server IP: {local_ip}")
-    print(f"📡 Port: 8766")
-    print(f"📋 Tell your friend to connect to: ws://{local_ip}:8766")
+    print(f"📡 Port: 3000")
+    print(f"📋 Tell your friend to connect to: ws://{local_ip}:3000")
     print("=" * 50)
     
-    # Start the WebSocket server directly with the bound method
+    # Create a proper wrapper function for websockets.serve
+    async def connection_handler(websocket, path):
+        await game_server.handle_player_connection(websocket, path)
+    
+    # Start the WebSocket server with the wrapper function
     server = await websockets.serve(
-        game_server.handle_player_connection,
+        connection_handler,  # Use wrapper function instead of bound method
         "0.0.0.0", 
-        8766
+        3000
     )
     
     print("✅ Server is running! Waiting for players...")
