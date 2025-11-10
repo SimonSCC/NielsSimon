@@ -1,10 +1,39 @@
-﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+﻿
+using Microsoft.AspNetCore.SignalR.Client;
 
-Console.WriteLine("Ctrl+ shift + P opens the command palette.");
+Console.WriteLine("SignalR Console Chat Client");
+Console.Write("Enter your name: ");
+string user = Console.ReadLine() ?? "User";
 
-Game game = new Game();
-game.Start();
+var connection = new HubConnectionBuilder()
+    .WithUrl("http://localhost:5285/chat")
+    .WithAutomaticReconnect()
+    .Build();
+
+connection.On<string, string>("ReceiveMessage", (sender, message) =>
+{
+    var prevColor = Console.ForegroundColor;
+    Console.ForegroundColor = ConsoleColor.Green;
+    Console.WriteLine($"{sender}: {message}");
+    Console.ForegroundColor = prevColor;
+});
+
+await connection.StartAsync();
+Console.WriteLine("Connected! Type messages and press Enter. Type /exit to quit.");
+
+string? input;
+while ((input = Console.ReadLine()) != "/exit")
+{
+    if (!string.IsNullOrWhiteSpace(input))
+    {
+        await connection.InvokeAsync("SendMessage", user, input);
+    }
+}
+
+await connection.StopAsync();
+Console.WriteLine("Disconnected.");
+
+// Game/game logic below can be restored or integrated as needed.
 
 public class Game
 {
